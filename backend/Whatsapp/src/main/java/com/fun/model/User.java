@@ -5,10 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.management.Notification;
-import java.util.ArrayList;
-import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -21,6 +17,4 @@ public class User {
     private String email;
     private String full_name;
     private String profile_picture;
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Notification> notifications = new ArrayList<>();
 }

@@ -17,24 +17,23 @@ import io.jsonwebtoken.security.Keys;
 public class JwtProvider {
     SecretKey key = Keys.hmacShaKeyFor(JwtConstant.SECRET_KEY.getBytes());
     public String generateToken(Authentication auth) {
-        Collection<? extends GrantedAuthority> authorities = auth.getAuthorities();
-        String roles = populateAuthorities(authorities);
+//        Collection<? extends GrantedAuthority> authorities = auth.getAuthorities();
+//        String roles = populateAuthorities(authorities);
         String jwt = Jwts.builder().setIssuedAt(new Date())
                 .setExpiration(new Date(new Date().getTime()+86400000))
                 .claim("email", auth.getName())
-                .claim("authorities", roles)
                 .signWith(key)
                 .compact();
         return jwt;
     }
 
-    private String populateAuthorities(Collection<? extends GrantedAuthority> collection) {
-        Set<String> auths = new HashSet<>();
-        for (GrantedAuthority authority : collection) {
-            auths.add(authority.getAuthority());
-        }
-        return String.join(",", auths);
-    }
+//    private String populateAuthorities(Collection<? extends GrantedAuthority> collection) {
+//        Set<String> auths = new HashSet<>();
+//        for (GrantedAuthority authority : collection) {
+//            auths.add(authority.getAuthority());
+//        }
+//        return String.join(",", auths);
+//    }
 
 
     public String getEmailFromToken(String jwt) {
