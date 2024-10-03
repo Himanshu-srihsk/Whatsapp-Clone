@@ -3,6 +3,9 @@ import { TbCircleDashed } from "react-icons/tb";
 import { BiCommentDetail } from "react-icons/bi";
 import { AiOutlineSearch } from "react-icons/ai";
 import { ImAttachment } from "react-icons/im";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+
 import {
   BsEmojiSmile,
   BsFilter,
@@ -14,6 +17,8 @@ import MessageCard from "./MessageCard/MessageCard";
 import "./HomePage.css";
 import { useNavigate } from "react-router";
 import Profile from "./Profile/Profile";
+import { Button } from "@mui/material";
+import CreateGroup from "./Group/CreateGroup";
 
 const HomePage = () => {
   const [querys, setQuerys] = useState(null);
@@ -35,23 +40,37 @@ const HomePage = () => {
     setIsProfile(false);
   };
 
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const open = Boolean(anchorEl);
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+  const [isGroup, setIsGroup] = useState(false);
+  const handleCreateGroup = () => {
+     setIsGroup(true)
+  }
+
+  
   return (
     <div className="relative">
       <div className=" py-14 bg-green-400 w-full">
         <div className="flex bg-[#f0f2f5] h-[90vh] absolute top-[5vh] w-[96vw] left-[2vw]">
           <div className="left w-[30%] bg-[#e8e9ec] h-full">
             {
-              isProfile &&
-              <div className="w-full h-full">
-                <Profile handleCloseOpenProfile={handleCloseOpenProfile}/>
-              </div>
+              isGroup && <CreateGroup/>
             }
-            {
-              !isProfile &&
+            {isProfile && (
+              <div className="w-full h-full">
+                <Profile handleCloseOpenProfile={handleCloseOpenProfile} />
+              </div>
+            )}
+            {!isProfile && !isGroup && (
               <div className="w-full">
-              
-              {/* home */}
-              
+                {/* home */}
+
                 <div className="flex justify-between items-center p-3">
                   <div
                     onClick={handleNavigate}
@@ -65,39 +84,64 @@ const HomePage = () => {
                     <p>username</p>
                   </div>
                   <div className="space-x-3 text-2xl flex">
-                    <TbCircleDashed className="cursor-pointer" onClick={()=> navigate("/status")}/>
+                    <TbCircleDashed
+                      className="cursor-pointer"
+                      onClick={() => navigate("/status")}
+                    />
                     <BiCommentDetail />
+                    <div>
+                      <BsThreeDotsVertical
+                        id="basic-button"
+                        aria-controls={open ? "basic-menu" : undefined}
+                        aria-haspopup="true"
+                        aria-expanded={open ? "true" : undefined}
+                        onClick={handleClick}
+                      />
+
+                      <Menu
+                        id="basic-menu"
+                        anchorEl={anchorEl}
+                        open={open}
+                        onClose={handleClose}
+                        MenuListProps={{
+                          "aria-labelledby": "basic-button",
+                        }}
+                      >
+                        <MenuItem onClick={handleClose}>Profile</MenuItem>
+                        <MenuItem onClick={handleCreateGroup}>Create Group</MenuItem>
+                        <MenuItem onClick={handleClose}>Logout</MenuItem>
+                      </Menu>
+                    </div>
                   </div>
                 </div>
-              
 
-              <div className="relative flex justify-center items-center bg-white py-4 px-3">
-                <input
-                  className="border-none outline-none bg-slate-200 rounded-md w-[93%] pl-9 py-2"
-                  type="text"
-                  placeholder="Search or Start new Chat"
-                  onChange={(e) => {
-                    setQuerys(e.target.value);
-                    handleSearch(e.target.value);
-                  }}
-                  value={querys}
-                />
-                <AiOutlineSearch className="left-5 top-7 absolute" />
-                <div>
-                  <BsFilter className="ml-4 text-3xl" />
+                <div className="relative flex justify-center items-center bg-white py-4 px-3">
+                  <input
+                    className="border-none outline-none bg-slate-200 rounded-md w-[93%] pl-9 py-2"
+                    type="text"
+                    placeholder="Search or Start new Chat"
+                    onChange={(e) => {
+                      setQuerys(e.target.value);
+                      handleSearch(e.target.value);
+                    }}
+                    value={querys}
+                  />
+                  <AiOutlineSearch className="left-5 top-7 absolute" />
+                  <div>
+                    <BsFilter className="ml-4 text-3xl" />
+                  </div>
+                </div>
+                <div className="bg-white overflow-y-scroll h-[70vh] px-3">
+                  {querys &&
+                    [1, 1, 1, 1, 1, 1].map((item) => (
+                      <div onClick={handleClickOnChatCard}>
+                        <hr />
+                        <ChatCard />
+                      </div>
+                    ))}
                 </div>
               </div>
-              <div className="bg-white overflow-y-scroll h-[70vh] px-3">
-                {querys &&
-                  [1, 1, 1, 1, 1, 1].map((item) => (
-                    <div onClick={handleClickOnChatCard}>
-                      <hr />
-                      <ChatCard />
-                    </div>
-                  ))}
-              </div>
-            </div>
-            }
+            )}
           </div>
           {!currentChat && (
             <div className="w-[70%] flex flex-col items-center justify-center h-full">
