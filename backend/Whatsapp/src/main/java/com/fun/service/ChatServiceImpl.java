@@ -30,7 +30,9 @@ public class ChatServiceImpl implements ChatService{
         chat.setCreatedBy(reqUser);
         chat.getUsers().add(user);
         chat.getUsers().add(reqUser);
-       // chat.setIsGroup(false);
+       // System.out.println("Chat is "+ chat);
+        chat.setIsGroup(false);
+        chat = this.chatRepo.save(chat);
         return chat;
     }
 
@@ -62,6 +64,7 @@ public class ChatServiceImpl implements ChatService{
             User user = userService.findUserById(userId);
             group.getUsers().add(user);
         }
+        group = this.chatRepo.save(group);
         return group;
     }
 

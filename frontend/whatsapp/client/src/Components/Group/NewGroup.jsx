@@ -1,10 +1,60 @@
-import { Button, CircularProgress } from "@mui/material";
+import { Avatar, Button, CircularProgress } from "@mui/material";
 import React, { useState } from "react";
 import { BsArrowLeft, BsCheck2 } from "react-icons/bs";
+import { useDispatch } from "react-redux";
+import CreateGroup from "./CreateGroup";
+import { creatGroupChat } from "../../State/Chat/Action";
 
-const NewGroup = () => {
+const NewGroup = ({groupMember, setIsGroup}) => {
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [groupName, setGroupName] = useState();
+  const [groupImg, setGroupImg] = useState(null);
+  const dispatch = useDispatch();
+  const token = localStorage.getItem("jwt");
+
+  const uploadToCloudnary = async(pics) =>{
+    setIsImageUploading(true)
+    const data = new FormData();
+    data.append("file", pics)
+    data.append("upload_preset","twitter")
+    data.append("cloud_name","dgbbltbil")
+  
+    const res = await fetch(
+      "https://api.cloudinary.com/v1_1/dgbbltbil/image/upload",
+      {
+        method: "POST",
+        body: data,
+      }
+    )
+    .then((res)=> res.json())
+    .then((data) => {
+      console.log("imgurl", data)
+      setGroupImg(data.url.toString());
+      setIsImageUploading(false)
+    }
+     
+    )
+  }
+
+  const handleCreateGroup = () =>{
+     let userIds = [];
+     for (let user of groupMember){
+      userIds.push(user.id)
+     }
+     const group = {
+      userIds,
+      chat_name: groupName,
+      chat_image: groupImg
+     }
+
+     const data = {
+      group,
+      token
+     }
+     dispatch(creatGroupChat(data));
+     setIsGroup(false)
+  }
+
   return (
     <div className="w-full h-full">
       <div className="flex items-center space-x-10 bg-[#008069] text-white pt-16 px-10 pb-5">
@@ -14,10 +64,10 @@ const NewGroup = () => {
 
       <div className="flex flex-col justify-center items-center my-12">
         <label htmlFor="imgInput" className="relative">
-          <img
-            src="https://images.pexels.com/photos/25695917/pexels-photo-25695917/free-photo-of-mother-holding-and-hugging-son-on-beach.jpeg"
-            alt=""
-            className="w-32 h-32 rounded-full object-cover"
+          
+          <Avatar alt="group icon"
+          sx={{width: "12rem", height: "12rem"}}
+          src={groupImg || "https://images.pexels.com/photos/25695917/pexels-photo-25695917/free-photo-of-mother-holding-and-hugging-son-on-beach.jpeg"}
           />
           {isImageUploading && (
             <CircularProgress className="absolute top-[5rem] left-[6rem]" />
@@ -25,9 +75,9 @@ const NewGroup = () => {
         </label>
         <input
           type="file"
-          id="ImgInput"
+          id="imgInput"
           className="hidden"
-          onChange={() => console.log("imageOnChange")}
+          onChange={(e) => uploadToCloudnary(e.target.files[0])}
           value={""}
         />
       </div>
@@ -44,7 +94,7 @@ const NewGroup = () => {
 
       {groupName && (
         <div className="py-10 bg-slate-200 flex items-center justify-center">
-          <Button>
+          <Button onClick={handleCreateGroup}>
             <div className="bg-[#0c977d] rounded-full p-4">
               <BsCheck2 className="text-white font-bold text-3xl" />
             </div>

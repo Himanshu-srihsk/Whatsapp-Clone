@@ -3,11 +3,17 @@ import { BsArrowLeft, BsArrowRight } from "react-icons/bs";
 import SelectedMember from "./SelectedMember";
 import ChatCard from "../ChatCard/ChatCard";
 import NewGroup from "./NewGroup";
+import { useDispatch, useSelector } from "react-redux";
+import { searchUser } from "../../State/Auth/Action";
 
-const CreateGroup = () => {
+const CreateGroup = ({setIsGroup}) => {
   const [newGroup, setNewGroup] = useState(false);
   const [groupMember, setGroupMember] = useState(new Set());
   const [query, setQuery] = useState("");
+  const dispatch = useDispatch();
+  const token = localStorage.getItem("jwt");
+  const { auth } = useSelector((store) => store);
+
   const handleRemoveMember = (item) => {
     //console.log("rmeodwnd")
     groupMember.delete(item);
@@ -15,7 +21,9 @@ const CreateGroup = () => {
     // console.log("groupMember", groupMember)
   };
 
-  const handleSearch = (value) => {};
+  const handleSearch = () => {
+    dispatch(searchUser({ keyword: query, token }));
+  };
   return (
     <div className="w-full h-full">
       {!newGroup && (
@@ -48,8 +56,9 @@ const CreateGroup = () => {
           </div>
 
           <div className="bg-white overflow-y-scroll h-[50.2vh]">
-            {query &&
-              [1, 1, 1, 1].map((item) => (
+            {query && Array.isArray(auth.searchUser) &&
+            auth.searchUser.length > 0  &&
+              auth.searchUser?.map((item) => (
                 <div
                   onClick={() => {
                     groupMember.add(item);
@@ -59,7 +68,7 @@ const CreateGroup = () => {
                   key={item?.id}
                 >
                   <hr />
-                  <ChatCard />
+                  <ChatCard userImg={item.profile_picture} name={item.full_name}/>
                 </div>
               ))}
           </div>
@@ -77,7 +86,7 @@ const CreateGroup = () => {
       )}
 
       {
-        newGroup && <NewGroup/>
+        newGroup && <NewGroup groupMember={groupMember} setIsGroup={setIsGroup}/>
       }
     </div>
   );

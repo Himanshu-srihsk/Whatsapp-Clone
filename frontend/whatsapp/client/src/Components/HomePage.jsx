@@ -20,8 +20,11 @@ import Profile from "./Profile/Profile";
 import { Button } from "@mui/material";
 import CreateGroup from "./Group/CreateGroup";
 import { useDispatch, useSelector } from "react-redux";
-import { currentUser, logoutAction } from "../State/Auth/Action";
+import { currentUser, logoutAction, searchUser } from "../State/Auth/Action";
 import { store } from "../State/store";
+import { CREATE_CHAT } from "../State/Chat/ActionType";
+import { creatChat, getUsersChat } from "../State/Chat/Action";
+import { creatMessage, getAllMessages } from "../State/Message/Action";
 
 const HomePage = () => {
   const [querys, setQuerys] = useState(null);
@@ -30,14 +33,21 @@ const HomePage = () => {
   const [isProfile, setIsProfile] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const {auth} = useSelector(store => store)
-  const token = localStorage.getItem('jwt')
+  const { auth,chat,message } = useSelector((store) => store);
+  const token = localStorage.getItem("jwt");
 
-  const handleSearch = () => {};
-  const handleClickOnChatCard = () => {
-    setCurrentChat(true);
+  const handleSearch = (keyword) => {
+    dispatch(searchUser({ keyword, token }));
   };
-  const handleCreateNewMessage = () => {};
+  const handleClickOnChatCard = (userId) => {
+     //setCurrentChat(true);
+    console.log("user id", userId)
+    dispatch(creatChat({token, data:{userId}}))
+    setQuerys("")
+  };
+  const handleCreateNewMessage = () => {
+    dispatch(creatMessage({token, data:{chatId: currentChat.id, content: content}}))
+  };
   const handleNavigate = () => {
     console.log("Navigating to profile...");
     setIsProfile(true);
@@ -56,34 +66,47 @@ const HomePage = () => {
   };
   const [isGroup, setIsGroup] = useState(false);
   const handleCreateGroup = () => {
-     setIsGroup(true)
+    setIsGroup(true);
+  };
+
+  useEffect(() => {
+    dispatch(currentUser(token));
+  }, [token]);
+  
+  const handleLogout = () => {
+    dispatch(logoutAction());
+    navigate("/signin");
+  };
+
+  const handleCurrentChat = (item) => {
+    console.log("item is ", item)
+   setCurrentChat(item);
   }
-  
+  console.log("current chat", currentChat);
+
+  useEffect(() => {
+    if (!auth.reqUser) {
+      navigate("/signup");
+    }
+  }, [auth.reqUser]);
+
   useEffect(()=>{
-    dispatch(currentUser(token))
-    },[token])
+  dispatch(getUsersChat({token}))
+  },[chat.createdChat, chat.createdgroup])
 
-  const handleLogout  = () => {
-     dispatch(logoutAction())
-     navigate("/signin")
-  }
-  
-  useEffect(()=>{
-   if(!auth.reqUser){
-    navigate("/signup")
-   }
-  },[auth.reqUser])
+  useEffect(()=> {
+    if(currentChat?.id){
+      dispatch(getAllMessages({chatId: currentChat.id, token }))
+    }
+    
+  },[currentChat, message.newMessage])
 
-
-  
   return (
     <div className="relative">
       <div className=" py-14 bg-green-400 w-full">
         <div className="flex bg-[#f0f2f5] h-[90vh] absolute top-[5vh] w-[96vw] left-[2vw]">
           <div className="left w-[30%] bg-[#e8e9ec] h-full">
-            {
-              isGroup && <CreateGroup/>
-            }
+            {isGroup && <CreateGroup setIsGroup= {setIsGroup}/>}
             {isProfile && (
               <div className="w-full h-full">
                 <Profile handleCloseOpenProfile={handleCloseOpenProfile} />
@@ -100,7 +123,7 @@ const HomePage = () => {
                   >
                     <img
                       className="rounded-full w-10 h-10 cursor-pointer"
-                      src="https://cdn.pixabay.com/photo/2023/12/11/12/51/lynx-8443540_640.jpg"
+                      src={auth.reqUser?.profile_picture || "https://cdn.pixabay.com/photo/2023/12/11/12/51/lynx-8443540_640.jpg"}
                       alt=""
                     />
                     <p>{auth.reqUser?.full_name}</p>
@@ -130,7 +153,9 @@ const HomePage = () => {
                         }}
                       >
                         <MenuItem onClick={handleClose}>Profile</MenuItem>
-                        <MenuItem onClick={handleCreateGroup}>Create Group</MenuItem>
+                        <MenuItem onClick={handleCreateGroup}>
+                          Create Group
+                        </MenuItem>
                         <MenuItem onClick={handleLogout}>Logout</MenuItem>
                       </Menu>
                     </div>
@@ -155,16 +180,53 @@ const HomePage = () => {
                 </div>
                 <div className="bg-white overflow-y-scroll h-[70vh] px-3">
                   {querys &&
-                    [1, 1, 1, 1, 1, 1].map((item) => (
-                      <div onClick={handleClickOnChatCard}>
-                        <hr />
-                        <ChatCard />
+                    Array.isArray(auth.searchUser) &&
+                    auth.searchUser.length > 0 && auth.searchUser?.map((item) => (
+                      <div onClick={() =>handleClickOnChatCard(item.id)}>
+                        {" "}
+                        <hr/>
+                        <ChatCard name={item.full_name}
+                        userImg = {item.profile_picture || "https://cdn.pixabay.com/photo/2017/11/10/05/48/user-2935527_640.png"}
+                        /> {" "}
                       </div>
                     ))}
+                  
+                  {chat.chats.length>0 && !querys &&                
+                    chat.chats?.map((item) => (
+                      <div onClick={() =>handleCurrentChat(item)}>
+                      
+                      
+                        <hr/>
+                        {console.log("item is hukr: ", item)}
+                       {
+                        
+                        item.isGroup? (
+                          <ChatCard 
+                          name={item.chat_name}
+                          userImg = {item.chat_image || "https://cdn.pixabay.com/photo/2020/03/06/11/14/black-4906807_640.jpg"}
+                         />
+                        ): (
+                          <ChatCard 
+                          isChat ={true}
+                          name ={
+                            auth.reqUser?.id !== item.users[0]?.id ? item.users[0].full_name : item.users[1].full_name
+                          }
+                          userImg={
+                            auth.reqUser?.id!== item.users[0].id? item.users[0].profile_picture || "https://cdn.pixabay.com/photo/2017/11/10/05/48/user-2935527_640.png"
+                             : item.users[1].profile_picture || "https://cdn.pixabay.com/photo/2017/11/10/05/48/user-2935527_640.png"
+                          }
+                          />
+                        )
+                       }
+                        
+                      </div>
+                    ))}
+
                 </div>
               </div>
             )}
           </div>
+          {/* {console.log("currentChat =", currentChat)} */}
           {!currentChat && (
             <div className="w-[70%] flex flex-col items-center justify-center h-full">
               <div className="max-w-[40%] text-center">
@@ -190,10 +252,20 @@ const HomePage = () => {
                   <div className="py-3 space-x-4 flex items-center px-3">
                     <img
                       className="rounded-full w-10 h-10 cursor-pointer"
-                      src="https://cdn.pixabay.com/photo/2023/12/11/12/51/lynx-8443540_640.jpg"
+                      src={
+                        currentChat.isGroup
+                        ? currentChat.chat_image || "https://cdn.pixabay.com/photo/2020/03/06/11/14/black-4906807_640.jpg":
+                        ( auth.reqUser?.id!== currentChat.users[0].id? currentChat.users[0].profile_picture || "https://cdn.pixabay.com/photo/2017/11/10/05/48/user-2935527_640.png"
+                          : currentChat.users[1].profile_picture || "https://cdn.pixabay.com/photo/2017/11/10/05/48/user-2935527_640.png")
+                      }
                       alt=""
                     />
-                    <p className="">{auth.reqUser?.full_name}</p>
+                    <p className="">
+                      {
+                      currentChat.isGroup
+                      ? currentChat.chat_name: auth.reqUser?.id == currentChat.users[0].id ? currentChat.users[1].full_name : currentChat.users[0].full_name
+                      }
+                      </p>
                   </div>
                   <div className="py-3 space-x-4 items-center px-3 flex">
                     <AiOutlineSearch />
@@ -205,10 +277,10 @@ const HomePage = () => {
 
               <div className="px-10 h-[85vh] overflow-y-scroll">
                 <div className="space-y-1 flex flex-col justify-center  mt-20 py-2">
-                  {[1, 1, 1, 1, 1, 1, 1, 1].map((item, i) => (
+                  {message.messages.length > 0 && message.messages.map((item, i) => (
                     <MessageCard
-                      isReqUserMessage={i % 2 === 0}
-                      content={"message"}
+                      isReqUserMessage={item.user.id  !==  auth.reqUser.id}
+                      content={item.content}
                     />
                   ))}
                 </div>

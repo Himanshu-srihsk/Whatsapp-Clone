@@ -49,7 +49,7 @@ public class UserServiceImpl implements UserService {
             user.setFull_name(req.getFull_name());
         }
         if(req.getProfile_picture()!=null){
-            user.setPassword(req.getProfile_picture());
+            user.setProfile_picture(req.getProfile_picture());
         }
         return userRepo.save(user);
     }

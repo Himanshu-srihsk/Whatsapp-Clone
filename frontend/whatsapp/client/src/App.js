@@ -4,6 +4,7 @@ import Status from "./Components/Status/Status";
 import StatusViewer from "./Components/Status/StatusViewer";
 import Signin from "./Components/Register/Signin";
 import Signup from "./Components/Register/Signup";
+import Profile from "./Components/Profile/Profile";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/status/:userId" element={<StatusViewer/>}></Route>
         <Route path="/signin" element={<Signin/>}></Route>
         <Route path="/signup" element={<Signup/>}></Route>
+        
       </Routes>
     </div>
   );
