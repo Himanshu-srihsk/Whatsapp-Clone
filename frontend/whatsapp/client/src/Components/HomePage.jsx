@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { TbCircleDashed } from "react-icons/tb";
 import { BiCommentDetail } from "react-icons/bi";
 import { AiOutlineSearch } from "react-icons/ai";
@@ -19,6 +19,9 @@ import { useNavigate } from "react-router";
 import Profile from "./Profile/Profile";
 import { Button } from "@mui/material";
 import CreateGroup from "./Group/CreateGroup";
+import { useDispatch, useSelector } from "react-redux";
+import { currentUser, logoutAction } from "../State/Auth/Action";
+import { store } from "../State/store";
 
 const HomePage = () => {
   const [querys, setQuerys] = useState(null);
@@ -26,6 +29,9 @@ const HomePage = () => {
   const [content, setContent] = useState(null);
   const [isProfile, setIsProfile] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const {auth} = useSelector(store => store)
+  const token = localStorage.getItem('jwt')
 
   const handleSearch = () => {};
   const handleClickOnChatCard = () => {
@@ -52,6 +58,22 @@ const HomePage = () => {
   const handleCreateGroup = () => {
      setIsGroup(true)
   }
+  
+  useEffect(()=>{
+    dispatch(currentUser(token))
+    },[token])
+
+  const handleLogout  = () => {
+     dispatch(logoutAction())
+     navigate("/signin")
+  }
+  
+  useEffect(()=>{
+   if(!auth.reqUser){
+    navigate("/signup")
+   }
+  },[auth.reqUser])
+
 
   
   return (
@@ -81,7 +103,7 @@ const HomePage = () => {
                       src="https://cdn.pixabay.com/photo/2023/12/11/12/51/lynx-8443540_640.jpg"
                       alt=""
                     />
-                    <p>username</p>
+                    <p>{auth.reqUser?.full_name}</p>
                   </div>
                   <div className="space-x-3 text-2xl flex">
                     <TbCircleDashed
@@ -109,7 +131,7 @@ const HomePage = () => {
                       >
                         <MenuItem onClick={handleClose}>Profile</MenuItem>
                         <MenuItem onClick={handleCreateGroup}>Create Group</MenuItem>
-                        <MenuItem onClick={handleClose}>Logout</MenuItem>
+                        <MenuItem onClick={handleLogout}>Logout</MenuItem>
                       </Menu>
                     </div>
                   </div>
@@ -171,7 +193,7 @@ const HomePage = () => {
                       src="https://cdn.pixabay.com/photo/2023/12/11/12/51/lynx-8443540_640.jpg"
                       alt=""
                     />
-                    <p className="">username</p>
+                    <p className="">{auth.reqUser?.full_name}</p>
                   </div>
                   <div className="py-3 space-x-4 items-center px-3 flex">
                     <AiOutlineSearch />
