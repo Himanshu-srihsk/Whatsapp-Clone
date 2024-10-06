@@ -13,10 +13,22 @@ public class RealTimeChat {
     @Autowired
     private SimpMessagingTemplate simpMessagingTemplate;
 
+//    @MessageMapping("/message")
+//    @SendTo("/group/public")
+//    public Message recieveMessage(@Payload Message message) {
+//        System.out.println("message: " + message);
+//        simpMessagingTemplate.convertAndSend("/group/" + message.getChat().getId().toString(), message);
+//        return message;
+//    }
+
     @MessageMapping("/message")
-    @SendTo("/group/public")
-    public Message recieveMessage(@Payload Message message) {
-        simpMessagingTemplate.convertAndSend("/group/" + message.getChat().getId().toString(), message);
-        return message;
+    public void receiveMessage(@Payload Message message) {
+        if (message.getChat().getIsGroup()) {
+            // Send message to the group
+            simpMessagingTemplate.convertAndSend("/group/" + message.getChat().getId(), message);
+        } else {
+            // Send message to a specific user
+            simpMessagingTemplate.convertAndSend("/user/" + message.getChat().getId(), message);
+        }
     }
 }

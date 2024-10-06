@@ -1,6 +1,13 @@
 import React from 'react'
 
 const ChatCard = ({userImg,name, lastMessage}) => {
+  // Function to format a timestamp to a readable date
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return "";
+
+    const options = { year: "numeric", month: "short", day: "numeric" };
+    return new Date(timestamp).toLocaleDateString(undefined, options);
+  };
   return (
     <div className='flex items-center justify-center py-2 group cursor-pointer'>
        <div className='w-[20%]'>
@@ -10,7 +17,11 @@ const ChatCard = ({userImg,name, lastMessage}) => {
        <div className='pl-5 w-[80%]'>
          <div className='flex justify-between items-center'>
             <p className='text-lg'>{name}</p>
-            <p className='text-sm'>timestamp</p>
+            <p className='text-sm'>
+              
+                {lastMessage ? formatTimestamp(lastMessage.timestamp) : ""}
+              
+            </p>
          </div>
 
          <div className='flex justify-between items-center'>
