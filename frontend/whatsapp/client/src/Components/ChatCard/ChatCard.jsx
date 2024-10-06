@@ -1,6 +1,6 @@
 import React from 'react'
 
-const ChatCard = ({userImg,name}) => {
+const ChatCard = ({userImg,name, lastMessage}) => {
   return (
     <div className='flex items-center justify-center py-2 group cursor-pointer'>
        <div className='w-[20%]'>
@@ -14,7 +14,9 @@ const ChatCard = ({userImg,name}) => {
          </div>
 
          <div className='flex justify-between items-center'>
-             <p>message...</p>
+             <p className="text-gray-600 truncate">
+             {lastMessage ? lastMessage.content : ""}
+             </p>
              <div className='flex space-x-2 items-center'>
                 <p className='text-xs py-1 px-2 text-white bg-green-500 rounded-full'>5</p>
              </div>

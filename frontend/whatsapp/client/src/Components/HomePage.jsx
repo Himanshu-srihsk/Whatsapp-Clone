@@ -38,6 +38,7 @@ const HomePage = () => {
   const dispatch = useDispatch();
   const { auth,chat,message } = useSelector((store) => store);
   const token = localStorage.getItem("jwt");
+  const [lastMessages, setLastMessages] = useState({});
 
   
 
@@ -172,22 +173,6 @@ console.log("currentChat:", currentChat);
   };
 
   // Callback to handle received messages from WebSocket
-  // const onMessageReceive = (payload) => {
-  //   console.log("on message receive ", JSON.parse(payload.body));
-  //   const receivedMessage = JSON.parse(payload.body);
-  //   setMessages((prevMessages) => [...prevMessages, receivedMessage]);
-  // };
-
-  // const onMessageReceive = (payload) => {
-  //   try {
-  //     const receivedMessage = JSON.parse(payload.body);
-  //     console.log("Received message:", receivedMessage);
-  //     setMessages((prevMessages) => [...prevMessages, receivedMessage]);
-  //   } catch (error) {
-  //     console.error("Error parsing received message:", error);
-  //   }
-  // }
-
   const onMessageReceive = (payload) => {
     try {
       console.log("Raw payload received:", payload);
@@ -236,6 +221,18 @@ useEffect(() => {
  useEffect(() => {
   if (message.messages) {
     setMessages(message.messages);
+  }
+}, [message.messages]);
+
+// Effect to update lastMessages when messages change
+useEffect(() => {
+  const prevLastMessages = { ...lastMessages };
+  if (message.messages && message.messages.length > 0) {
+    message.messages.forEach((msg) => {
+      prevLastMessages[msg.chat.id] = msg;
+    });
+
+    setLastMessages(prevLastMessages);
   }
 }, [message.messages]);
 
@@ -340,6 +337,11 @@ const messagesEndRef = useRef(null);
                         <hr/>
                         <ChatCard name={item.full_name}
                         userImg = {item.profile_picture || "https://cdn.pixabay.com/photo/2017/11/10/05/48/user-2935527_640.png"}
+                        lastMessage={{
+                          content:
+                            lastMessages[item.id]?.content || "Start your conversation",
+                          timestamp: lastMessages[item.id]?.timestamp || "",
+                        }}
                         /> {" "}
                       </div>
                     ))}
@@ -350,13 +352,18 @@ const messagesEndRef = useRef(null);
                       
                       
                         <hr/>
-                        {console.log("item is hukr: ", item)}
+                        {/* {console.log("item is hukr: ", item)} */}
                        {
                         
                         item.isGroup? (
                           <ChatCard 
                           name={item.chat_name}
                           userImg = {item.chat_image || "https://cdn.pixabay.com/photo/2020/03/06/11/14/black-4906807_640.jpg"}
+                          lastMessage={{
+                            content:
+                              lastMessages[item.id]?.content || "Start your conversation",
+                            timestamp: lastMessages[item.id]?.timestamp || "",
+                          }}
                          />
                         ): (
                           <ChatCard 
@@ -368,6 +375,11 @@ const messagesEndRef = useRef(null);
                             auth.reqUser?.id!== item.users[0].id? item.users[0].profile_picture || "https://cdn.pixabay.com/photo/2017/11/10/05/48/user-2935527_640.png"
                              : item.users[1].profile_picture || "https://cdn.pixabay.com/photo/2017/11/10/05/48/user-2935527_640.png"
                           }
+                          lastMessage={{
+                            content:
+                              lastMessages[item.id]?.content || "Start your conversation",
+                            timestamp: lastMessages[item.id]?.timestamp || "",
+                          }}
                           />
                         )
                        }
