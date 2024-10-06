@@ -239,17 +239,23 @@ useEffect(() => {
 
 
 const messageContainerRef = useRef(null);
-const scrollToBottomRef = useRef(null); // Create a reference for the dummy element
 
-const messagesEndRef = useRef(null);
+// const messagesEndRef = useRef(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+//   const scrollToBottom = () => {
+//     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+//   };
 
-  useEffect(() => {
-    scrollToBottom(); // Scrolls to the bottom when the component loads or messages update
-  }, [messages]);
+//   useEffect(() => {
+//     scrollToBottom(); // Scrolls to the bottom when the component loads or messages update
+//   }, [messages]);
+
+useEffect(() => {
+  // Scroll to bottom whenever messages change
+  if (messageContainerRef.current) {
+    messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
+  }
+}, [messages]);
 
   return (
     <div className="relative">
@@ -440,7 +446,7 @@ const messagesEndRef = useRef(null);
               </div>
               {/* message card */}
 
-              <div className="px-10 h-[85vh] overflow-y-scroll p-10">
+              <div className="px-10 h-[85vh] overflow-y-scroll p-10" ref={messageContainerRef}>
                 <div className="space-y-1 flex flex-col justify-center  mt-20 py-2">
                   {messages.length > 0 && messages.map((item, i) => (
                     <MessageCard
@@ -448,7 +454,6 @@ const messagesEndRef = useRef(null);
                       content={item.content}
                     />
                   ))}
-                   <div ref={scrollToBottomRef}></div>
                 </div>
               </div>
 
