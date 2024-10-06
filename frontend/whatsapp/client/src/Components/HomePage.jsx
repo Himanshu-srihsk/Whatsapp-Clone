@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { TbCircleDashed } from "react-icons/tb";
 import { BiCommentDetail } from "react-icons/bi";
 import { AiOutlineSearch } from "react-icons/ai";
 import { ImAttachment } from "react-icons/im";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+
+import SockJs from "sockjs-client/dist/sockjs";
+import { over } from "stompjs";
 
 import {
   BsEmojiSmile,
@@ -35,6 +38,8 @@ const HomePage = () => {
   const dispatch = useDispatch();
   const { auth,chat,message } = useSelector((store) => store);
   const token = localStorage.getItem("jwt");
+
+  
 
   const handleSearch = (keyword) => {
     dispatch(searchUser({ keyword, token }));
@@ -93,13 +98,146 @@ const HomePage = () => {
   useEffect(()=>{
   dispatch(getUsersChat({token}))
   },[chat.createdChat, chat.createdgroup])
-
+  
+  // Effect to get all messages when the current chat changes
   useEffect(()=> {
     if(currentChat?.id){
       dispatch(getAllMessages({chatId: currentChat.id, token }))
     }
     
   },[currentChat, message.newMessage])
+  
+  const [stompClient, setStompClient] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [messages, setMessages] = useState([]);
+
+
+
+   // Function to establish a WebSocket connection
+   const connect = () => {
+    const sock = new SockJs("http://localhost:5100/ws");
+    const temp = over(sock);
+   // console.log("temp value",temp)
+    setStompClient(temp);
+ 
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      "X-XSRF-TOKEN": getCookie("XSRF-TOKEN"),
+    };
+  
+    temp.connect(headers, onConnect, (error) => {
+      console.error("Connection error:", error); // Log the error
+      onError(error);
+  });
+  
+  };
+
+  console.log("stompClient:", stompClient);
+console.log("currentChat:", currentChat);
+
+  // Function to get a specific cookie by name
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+      return parts.pop().split(";").shift();
+    }
+  }
+
+  // Callback for WebSocket connection error
+  const onError = (error) => {
+    console.log("moud on error ", error);
+  };
+  
+  // Callback for successful WebSocket connection
+  const onConnect = () => { 
+    setIsConnected(true);
+    console.log("Master");
+  // console.log("WebSocket ready state: ", stompClient.ws.readyState);
+  console.log("on connect stompClient ", stompClient, " moud currentChat ", currentChat);
+
+    // Subscribe to the current chat messages based on the chat type
+    if (stompClient && currentChat) {
+      if (currentChat.isGroupChat) {
+        // Subscribe to group chat messages
+        stompClient.subscribe(`/group/${currentChat?.id}`, onMessageReceive);
+      } else {
+        // Subscribe to direct user messages
+        stompClient.subscribe(`/user/${currentChat?.id}`, onMessageReceive);
+      }
+    }
+  };
+
+  // Callback to handle received messages from WebSocket
+  // const onMessageReceive = (payload) => {
+  //   console.log("on message receive ", JSON.parse(payload.body));
+  //   const receivedMessage = JSON.parse(payload.body);
+  //   setMessages((prevMessages) => [...prevMessages, receivedMessage]);
+  // };
+
+  const onMessageReceive = (payload) => {
+    try {
+      const receivedMessage = JSON.parse(payload.body);
+      console.log("Received message:", receivedMessage);
+      setMessages((prevMessages) => [...prevMessages, receivedMessage]);
+    } catch (error) {
+      console.error("Error parsing received message:", error);
+    }
+  }
+
+// Effect to establish a WebSocket connection
+useEffect(() => {
+  connect();
+}, []);
+
+// Effect to subscribe to a chat when connected
+
+useEffect(() => {
+  if (isConnected && stompClient && currentChat && auth.reqUser) {
+    const subscriptionPath = currentChat.isGroupChat
+      ? `/group/${currentChat?.id}`
+      : `/user/${currentChat?.id}`;
+
+    const subscription = stompClient.subscribe(subscriptionPath, onMessageReceive);
+    console.log("Subscribing to:", subscriptionPath);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }
+}, [isConnected, stompClient, currentChat]);
+
+
+// Effect to handle sending a new message via WebSocket
+useEffect(() => {
+  // console.log("message new message :", message)
+  if (message.newMessage && stompClient) {
+    console.log("on message send", JSON.stringify(message.newMessage))
+    stompClient.send("/app/message", {}, JSON.stringify(message.newMessage));
+    setMessages([...messages, message.newMessage]);
+  }
+}, [message.newMessage, stompClient]);
+
+ // Effect to set the messages state from the store
+ useEffect(() => {
+  if (message.messages) {
+    setMessages(message.messages);
+  }
+}, [message.messages]);
+
+
+
+const messageContainerRef = useRef(null);
+const scrollToBottomRef = useRef(null); // Create a reference for the dummy element
+
+const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom(); // Scrolls to the bottom when the component loads or messages update
+  }, [messages]);
 
   return (
     <div className="relative">
@@ -275,14 +413,15 @@ const HomePage = () => {
               </div>
               {/* message card */}
 
-              <div className="px-10 h-[85vh] overflow-y-scroll">
+              <div className="px-10 h-[85vh] overflow-y-scroll p-10">
                 <div className="space-y-1 flex flex-col justify-center  mt-20 py-2">
-                  {message.messages.length > 0 && message.messages.map((item, i) => (
+                  {messages.length > 0 && messages.map((item, i) => (
                     <MessageCard
                       isReqUserMessage={item.user.id  !==  auth.reqUser.id}
                       content={item.content}
                     />
                   ))}
+                   <div ref={scrollToBottomRef}></div>
                 </div>
               </div>
 
