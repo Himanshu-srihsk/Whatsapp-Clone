@@ -123,6 +123,7 @@ const HomePage = () => {
     const headers = {
       Authorization: `Bearer ${token}`,
       "X-XSRF-TOKEN": getCookie("XSRF-TOKEN"),
+      
     };
   
     temp.connect(headers, onConnect, (error) => {
@@ -158,11 +159,13 @@ console.log("currentChat:", currentChat);
 
     // Subscribe to the current chat messages based on the chat type
     if (stompClient && currentChat) {
-      if (currentChat.isGroupChat) {
+      if (currentChat.isGroup) {
         // Subscribe to group chat messages
+        console.log("Group chat messages subscribed to ", currentChat.id);
         stompClient.subscribe(`/group/${currentChat?.id}`, onMessageReceive);
       } else {
         // Subscribe to direct user messages
+        console.log("Direct user messages subscribed to ", currentChat.id);
         stompClient.subscribe(`/user/${currentChat?.id}`, onMessageReceive);
       }
     }
@@ -175,15 +178,27 @@ console.log("currentChat:", currentChat);
   //   setMessages((prevMessages) => [...prevMessages, receivedMessage]);
   // };
 
+  // const onMessageReceive = (payload) => {
+  //   try {
+  //     const receivedMessage = JSON.parse(payload.body);
+  //     console.log("Received message:", receivedMessage);
+  //     setMessages((prevMessages) => [...prevMessages, receivedMessage]);
+  //   } catch (error) {
+  //     console.error("Error parsing received message:", error);
+  //   }
+  // }
+
   const onMessageReceive = (payload) => {
     try {
+      console.log("Raw payload received:", payload);
       const receivedMessage = JSON.parse(payload.body);
-      console.log("Received message:", receivedMessage);
+      console.log("Parsed message:", receivedMessage);
       setMessages((prevMessages) => [...prevMessages, receivedMessage]);
     } catch (error) {
       console.error("Error parsing received message:", error);
     }
-  }
+  };
+  
 
 // Effect to establish a WebSocket connection
 useEffect(() => {
@@ -194,7 +209,7 @@ useEffect(() => {
 
 useEffect(() => {
   if (isConnected && stompClient && currentChat && auth.reqUser) {
-    const subscriptionPath = currentChat.isGroupChat
+    const subscriptionPath = currentChat.isGroup
       ? `/group/${currentChat?.id}`
       : `/user/${currentChat?.id}`;
 
