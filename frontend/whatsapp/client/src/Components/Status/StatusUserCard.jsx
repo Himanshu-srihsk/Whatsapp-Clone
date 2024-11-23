@@ -13,7 +13,7 @@ const StatusUserCard = () => {
             src="https://cdn.pixabay.com/photo/2021/11/05/11/06/pumpkins-6771028_640.jpg" alt=''/>
         </div>
         <div className='ml-2 text-white'>
-            <p>Pablo Escobar</p>
+            <p>Random User</p>
         </div>
     </div>
   )

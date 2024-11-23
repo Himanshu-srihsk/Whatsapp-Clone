@@ -1,77 +1,84 @@
-import { Alert, Button, Snackbar } from "@mui/material";
+import { Alert, Button, Snackbar, TextField } from "@mui/material";
 import { green } from "@mui/material/colors";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
-import { store } from "../../State/store";
 import { currentUser, login } from "../../State/Auth/Action";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 const Signin = () => {
+  const [openSnackBar, setOpenSnackbar] = React.useState(false);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { auth } = useSelector((store) => store); // Get auth state from Redux
+  const { error, signin } = auth || {}; // Extract error and signin from auth state
+  const token = localStorage.getItem("jwt");
 
-    const [openSnackBar, setOpenSnackbar] = React.useState(false);
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const {auth} = useSelector(store => store)
-    const token = localStorage.getItem('jwt')
+  const validationSchema = Yup.object().shape({
+    email: Yup.string().email("Invalid email").required("Email is required "),
+    password: Yup.string().required("Password is required"),
+  });
+
+  const formik = useFormik({
+    initialValues: {
+      email: "",
+      password: "",
+    },
+    validationSchema,
+    onSubmit: (values) => {
+      dispatch(login(values));
+      setOpenSnackbar(true);
+      console.log("login form value", values);
+    },
+  });
 
   const handleCloseSnackBar = () => {
-
     setOpenSnackbar(false);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Form submitted");
-    setOpenSnackbar(true);
-    dispatch(login(inputData))
-  };
-  const [inputData, setInputData] = useState({ email: "", password: "" });
-  const handleChange = (e) => {
-    const {name, value} = e.target;
-    setInputData((values) => ({...values, [name]: value }));
-  };
+  useEffect(() => {
+    if (token) {
+      dispatch(currentUser(token));
+    }
+  }, [token]);
 
-  useEffect(()=>{
-   if(token){
-    dispatch(currentUser(token))
-   }
-  },[token])
-
-  useEffect(()=>{
-   if(auth.reqUser?.full_name){
-    navigate("/")
-   }
-  },[auth.reqUser])
+  useEffect(() => {
+    if (auth.reqUser?.full_name) {
+      navigate("/");
+    }
+  }, [auth.reqUser]);
 
   return (
     <div>
       <div className="flex justify-center h-screen  items-center">
         <div className="w-[30%]  p-10 shadow-md bg-white">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <p className="mb-2">Email</p>
-              <input
-                type="text"
-                className="py-2 px-2 outline outline-green-600 w-full rounded-md border"
-                onChange={handleChange}
-                placeholder="Enter your email address"
-                value={inputData.email}
-                name="email"
-              />
-            </div>
+          <form onSubmit={formik.handleSubmit} className="space-y-5">
+            <TextField
+              fullWidth
+              label="Email"
+              name="email"
+              type="email"
+              value={formik.values.email}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.email && Boolean(formik.errors.email)}
+              helperText={formik.touched.email && formik.errors.email}
+              placeholder="Enter your email address"
+            />
 
-            <div>
-              <p className="mb-2">Password</p>
-              <input
-                type="text"
-                className="py-2 px-2 outline outline-green-600 w-full rounded-md border"
-                onChange={handleChange}
-                placeholder="Enter your password"
-                value={inputData.password}
-                name="password"
-              />
-            </div>
-
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              type="password"
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.password && Boolean(formik.errors.password)}
+              helperText={formik.touched.password && formik.errors.password}
+              placeholder="Enter your password"
+            />
             <div>
               <Button
                 type="submit"
@@ -94,16 +101,26 @@ const Signin = () => {
       </div>
 
       <Snackbar
-        open={openSnackBar}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackBar}
-        message="Note archived"
-        
-      >
-        <Alert onClose={handleCloseSnackBar} severity="success" sx={{ width: "100%" }}>
-          Login Success.
-        </Alert>
-      </Snackbar>
+  open={openSnackBar && error}
+  autoHideDuration={6000}
+  onClose={(event, reason) => {
+    if (reason !== "clickaway") {
+      handleCloseSnackBar();
+    }
+  }}
+>
+  <Alert
+    onClose={handleCloseSnackBar}
+    severity="error"
+    sx={{ width: "100%" }}
+  >
+    {error || "Invalid email or password."}
+  </Alert>
+</Snackbar>
+
+
+
+     
     </div>
   );
 };

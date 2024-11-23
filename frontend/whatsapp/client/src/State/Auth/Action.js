@@ -1,27 +1,61 @@
 import { BASE_API_URL } from "../../config/api";
 import { LOGIN, LOGOUT, REGISTER, REQ_USER, SEARCH_USER, UPDATE_USER } from "./ActionType";
 
-export const register = (data) => async(dispatch) => {
-    try {
-        const res = await fetch(`${BASE_API_URL}/auth/signup`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        })
-        const resData = await res.json();
-        console.log(resData)
-        if(resData.jwt){
-            localStorage.setItem('jwt', resData.jwt);
-        }
-        dispatch({type:REGISTER,payload:resData})
-        console.log("REGISTER_SUCCESS ", resData)
-    } catch (error) {
-        console.log("Register ERROR :", error)
-    }
-}
+// export const register = (data) => async(dispatch) => {
+//     try {
+//         const res = await fetch(`${BASE_API_URL}/auth/signup`, {
+//             method: 'POST',
+//             headers: {
+//                 'Content-Type': 'application/json'
+//             },
+//             body: JSON.stringify(data)
+//         })
+//         const resData = await res.json();
+//         console.log(resData)
+//         if(resData.jwt){
+//             localStorage.setItem('jwt', resData.jwt);
+//         }
+//         dispatch({type:REGISTER,payload:resData})
+//         console.log("REGISTER_SUCCESS ", resData)
+//     } catch (error) {
+//         console.log("Register ERROR :", error)
+//     }
+// }
 
+export const register = (data) => async (dispatch) => {
+    try {
+      const res = await fetch(`${BASE_API_URL}/auth/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+  
+      const resData = await res.json();
+  
+      if (!res.ok) {
+        // If the response is not OK, throw an error with the server message
+        throw new Error(resData.error || "Failed to register");
+      }
+  
+      if (resData.jwt) {
+        localStorage.setItem("jwt", resData.jwt);
+      }
+  
+      dispatch({ type: REGISTER, payload: resData });
+      console.log("REGISTER_SUCCESS", resData);
+  
+      return resData; // Return success data (optional, for chaining if needed)
+    } catch (error) {
+      console.error("Register ERROR:", error.message);
+  
+      // Reject the promise with an error to be handled by the component
+      throw { error: error.message };
+    }
+  };
+
+  
 export const login = (data) => async(dispatch) => {
     try {
         const res = await fetch(`${BASE_API_URL}/auth/signin`, {
@@ -32,13 +66,26 @@ export const login = (data) => async(dispatch) => {
             body: JSON.stringify(data)
         })
         const resData = await res.json();
-        if(resData.jwt){
+        // if(resData.jwt){
+        //     localStorage.setItem('jwt', resData.jwt);
+        // }
+        
+        // dispatch({type:LOGIN,payload:resData})
+        // console.log("Login_SUCCESS ", resData)
+
+
+        if (resData.jwt) {
             localStorage.setItem('jwt', resData.jwt);
+            dispatch({ type: LOGIN, payload: { ...resData, error: null } });
+            console.log("Login_SUCCESS", resData);
+        } else {
+            dispatch({ type: LOGIN, payload: { ...resData, error: "Invalid email or password" } });
+            console.log("Login_FAILED", resData);
         }
-        dispatch({type:LOGIN,payload:resData})
-        console.log("Login_SUCCESS ", resData)
+
     } catch (error) {
-        console.log("Login ERROR :", error)
+        console.log("Login ERROR :", error);
+        dispatch({ type: LOGIN, payload: { jwt: null, error: "Something went wrong. Please try again later." } });
     }
 }
 
