@@ -173,16 +173,30 @@ console.log("currentChat:", currentChat);
   };
 
   // Callback to handle received messages from WebSocket
+  // const onMessageReceive = (payload) => {
+  //   try {
+  //     console.log("Raw payload received:", payload);
+  //     const receivedMessage = JSON.parse(payload.body);
+  //     console.log("Parsed message:", receivedMessage);
+  //     setMessages((prevMessages) => [...prevMessages, receivedMessage]);
+  //   } catch (error) {
+  //     console.error("Error parsing received message:", error);
+  //   }
+  // };
+
   const onMessageReceive = (payload) => {
     try {
       console.log("Raw payload received:", payload);
       const receivedMessage = JSON.parse(payload.body);
       console.log("Parsed message:", receivedMessage);
+  
+      // Only add the received message to the state
       setMessages((prevMessages) => [...prevMessages, receivedMessage]);
     } catch (error) {
       console.error("Error parsing received message:", error);
     }
   };
+  
   
 
 // Effect to establish a WebSocket connection
@@ -208,14 +222,28 @@ useEffect(() => {
 
 
 // Effect to handle sending a new message via WebSocket
+// useEffect(() => {
+//   // console.log("message new message :", message)
+//   if (message.newMessage && stompClient) {
+//     console.log("on message send", JSON.stringify(message.newMessage))
+//     stompClient.send("/app/message", {}, JSON.stringify(message.newMessage));
+//     setMessages([...messages, message.newMessage]);
+//   }
+// }, [message.newMessage, stompClient]);
+
 useEffect(() => {
-  // console.log("message new message :", message)
   if (message.newMessage && stompClient) {
-    console.log("on message send", JSON.stringify(message.newMessage))
+    console.log("Sending message:", JSON.stringify(message.newMessage));
+    
+    // Send the message through WebSocket
     stompClient.send("/app/message", {}, JSON.stringify(message.newMessage));
-    setMessages([...messages, message.newMessage]);
+
+    // Optionally, optimistically add the message to the UI (immediate feedback)
+    setMessages((prevMessages) => [...prevMessages, message.newMessage]);
   }
 }, [message.newMessage, stompClient]);
+
+
 
  // Effect to set the messages state from the store
  useEffect(() => {
